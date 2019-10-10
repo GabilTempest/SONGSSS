@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:form="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Main</title>
+    <link rel="stylesheet" href="css/song.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+</head>
+<body>
+
+
+<div id="uploaded-song"></div>
+<br>
+<!-- Trigger/Open The Modal -->
+<button id="openModal">Create Songs</button>
+
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+    <!-- Modal content -->
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="close">&times;</span>
+            <h2>Create songs</h2>
+        </div>
+        <div class="modal-body">
+            <div>
+                <form>
+                    <label for="fname">Name</label><br>
+                    <input type="text" id="fname" name="name" placeholder="Song name.."><br>
+
+                    <select type="select" id="bands" name="bame" placeholder="Band name..">
+                        <option value="name"></option>
+
+                    </select>
+
+
+                    <select type="select" id="genre" name="genreName" placeholder="Genre name..">
+                        <option value="name"></option>
+
+                    </select>
+
+
+<!--                    <label for="urlname">URL</label><br>-->
+                    <input id="urlname" disabled type="text"/>
+                    <input type="file" id="getFile">
+                    <input type="button" value="Send" id="sendFile">
+                </form>
+                <input type="button" id="btnCreateSongs" value="Create">
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<div class="container" style="display: none;">
+    <input id="songs-id" style="display: none">
+
+    <input type="text" id="songs-name" placeholder="Song"><br>
+
+    <select type="select" id="bandEdit" name="genreName" placeholder="Band name..">
+        <option value="name"></option>
+
+    </select>
+        <select type="select" id="genreEdit" name="genreName" placeholder="Genre name..">
+        <option value="name"></option>
+
+    </select>
+
+
+
+<!--    <input type="text" id="urlname-name" placeholder="URL"><br>-->
+    <input id="urlname1" disabled type="text"/>
+    <input type="file" id="getFile1">
+    <input type="button" value="Send" id="sendFile1">
+
+    <button id="update-button">Update</button>
+</div>
+
+
+<div class="controllers">
+    <input class="songs-id" type="text">
+    <button id="init-button">Init</button>
+</div>
+
+
+<table id="songs">
+    <tr>
+        <th>Id</th>
+        <th>Name</th>
+        <th>Band</th>
+        <th>Genre</th>
+
+
+        <th>Delete Button</th>
+    </tr>
+</table>
+
+
+<!--<table id="genre">-->
+
+<!--    <tr>-->
+<!--        <th>Name</th>-->
+<!--    </tr>-->
+
+<!--</table>-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script>
+
+
+    var mainUrl = "http://localhost:8085";
+
+    if (!window.localStorage.getItem('token')) {
+        window.location.href = '/sing';
+    }
+
+
+    function getBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () =>
+        resolve(reader.result);
+        reader.onerror = error =>
+        reject(error);
+
+    });
+        ;
+    }
+
+    document.getElementById("sendFile").onclick = function () {
+        var file = document.getElementById("getFile").files[0];
+        getBase64(file).then(data => {
+            let request = {
+                data: data
+    };
+
+            $.ajax({
+                url: "http://localhost:8085/upload",
+                type: "POST",
+                contentType: "application/json",
+                headers: {
+                    'Authorize': window.localStorage.getItem('token')
+                },
+                data: JSON.stringify(request),
+                success: function (data) {
+                    // addSongToContainer(data);
+                    $('#urlname').val(data);
+                },
+            });
+    });
+        ;
+    };
+
+
+
+
+    function getBase65(file1) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+        reader.readAsDataURL(file1);
+        reader.onload = () =>
+        resolve(reader.result);
+        reader.onerror = error =>
+        reject(error);
+
+    });
+        ;
+    }
+
+    document.getElementById("sendFile1").onclick = function () {
+        var file = document.getElementById("getFile1").files[0];
+        getBase65(file).then(data => {
+            let request = {
+                data: data
+    };
+
+            $.ajax({
+                url: "http://localhost:8085/upload",
+                type: "POST",
+                contentType: "application/json",
+                headers: {
+                    'Authorize': window.localStorage.getItem('token')
+                },
+                data: JSON.stringify(request),
+                success: function (data) {
+                    // addSongToContainer(data);
+                    $('#urlname1').val(data);
+                },
+            });
+    });
+        ;
+    };
+
+
+
+
+
+    function addSongToContainer(fileName) {
+        let song = document.createElement('mp3');
+        song.setAttribute('src', '/mp3/' + fileName);
+        document.getElementById("uploaded-song").appendChild();
+    }
+
+
+    getAllSongs();
+
+    setModalConfiguration();
+    setActionOnCreateBtn();
+    getAllGenres();
+    getAllBands();
+
+
+    //start when load page PS reload page for triggered http request
+    function getAllSongs() {
+        $.ajax({
+            url: mainUrl + "/songs?page=0&size=100&sortFieldName=name&direction=ASC",
+            // /person?page=0&size=10&sortFieldName=firstName&direction=ASC
+            type: "GET",
+            contentType: "application/json",
+            headers: {
+                'Authorize': window.localStorage.getItem('token')
+            },
+            success: function (dataResponse) {
+                console.log(dataResponse);
+                setSongsToTable(dataResponse.data);
+                setActionOnDeleteButtons();
+
+            },
+            error: function (error) {
+                alert(error.message);
+            }
+        });
+    }
+
+
+    function setSongsToTable(songs) {
+        for (var i = 0; i < songs.length; i++) {
+            setSongsToTablea(songs[i]);
+        }
+    }
+
+
+    function setSongsToTablea(songs) {
+        var tableOfSongs = $("#songs");
+        tableOfSongs.append('<tr>' +
+            '<td>' + songs.id + '</td>' +
+            '<td><a class="href" href="' + songs.urlname + '">' + songs.name + '</a></td>' +
+            '<td>' + songs.bame + '</td>' +
+            '<td>' + songs.genreName + '</td>' +
+
+            '<td><button class="button" value="' + songs.id + '">Delete</button></td>' +
+            '</tr>');
+    }
+
+    function setActionOnDeleteButtons() {
+        $(".button").each(function (index) {
+            $(this).click(function () {
+                $.ajax({
+                    url: mainUrl + "/songs/" + $(this).val(),
+                    type: "DELETE",
+                    headers: {
+                        'Authorize': window.localStorage.getItem('token')
+                    },
+                    success: function (data) {
+                        location.reload();
+                    },
+                    error: function (error) {
+                        alert(error.message);
+                    }
+                });
+            })
+        })
+
+    }
+
+
+    function setActionOnCreateBtn() {
+        $("#btnCreateSongs").click(function () {
+
+            var name = $("#fname").val();
+            var bame = $("#bands").val();
+            var genreName = $("#genre").val();
+            var urlname = $("#urlname").val();
+
+            var newSongs = {
+                "name": name,
+                "bame": bame,
+                "genreName": genreName,
+                "urlname": urlname,
+            };
+
+            $.ajax({
+                url: mainUrl + "/songs",
+                type: "POST",
+                contentType: "application/json",
+                headers: {
+                    'Authorize': window.localStorage.getItem('token')
+                },
+                data: JSON.stringify(newSongs),
+                success: function (data) {
+                    location.reload();
+                },
+                error: function (error) {
+                    alert(error.message);
+                }
+            });
+//            } else {
+//                alert("Всі поля повинні бути заповнені")
+//            }
+        });
+    }
+
+    $('#update-button').click(function () {
+
+        let songsRequest = {
+            name: $('#songs-name').val(),
+            bame: $('#bandEdit').val(),
+            genreName: $('#genreEdit').val(),
+            urlname: $('#urlname1').val(),
+
+        };
+
+        $.ajax({
+            url: 'http://localhost:8085/songs?id=' + $('.songs-id').val(),
+            type: 'PUT',
+            contentType: "application/json",
+            headers: {
+                'Authorize': window.localStorage.getItem('token')
+            },
+            data: JSON.stringify(songsRequest),
+            success: function (page) {
+                $('.container').slideUp();
+            },
+            error: function (e) {
+                console.log(e);
+            }
+        })
+
+    });
+
+    $('#init-button').click(function () {
+        let $songsId = $('.songs-id');
+
+        if ($songsId.val().trim().length < 1) {
+            alert("Enter id");
+            return;
+        }
+
+        $.ajax({
+            url: 'http://localhost:8085/songs/one?id=' + $songsId.val(),
+            type: 'GET',
+            headers: {
+                'Authorize': window.localStorage.getItem('token')
+            },
+            success: function (songs) {
+                $('#songs-id').val(songs.id);
+                $('#songs-name').val(songs.name);
+                $('#bandEdit').val(songs.bame);
+                $('#genreEdit').val(songs.genreName);
+                $('#urlname1').val(songs.urlname);
+
+                $('.container').slideDown();
+            },
+            error: function (e) {
+                $('.container').slideUp();
+                // if ( e.responseJSON.message.contains('НЕМАЄ ТАКОГО ID')) {
+                alert("НЕМАЄ ТАКОГО ID");
+
+
+                // }
+                console.log(e)
+
+            }
+
+        })
+
+
+    });
+
+
+    function getAllGenres() {
+        $.ajax({
+            url: mainUrl + "/genre?page=0&size=10&sortFieldName=name&direction=ASC",
+
+            type: "GET",
+            contentType: "application/json",
+            headers: {
+                'Authorize': window.localStorage.getItem('token')
+            },
+
+            success: function (dataResponse) {
+                console.log(dataResponse)
+                setGenrestoTable(dataResponse.data);
+                setActionOnDeleteButtons();
+
+            },
+            error: function (error) {
+                alert(error.message);
+            }
+        });
+    }
+
+
+    function setGenrestoTable(genre) {
+        for (var i = 0; i < genre.length; i++) {
+            setGenrestoTablea(genre[i]);
+        }
+    }
+
+
+    function setGenrestoTablea(genre) {
+        var tableOfGenre = $("#genre");
+        var tableOfGenreEdit = $("#genreEdit");
+        tableOfGenre.append(' <option value="' + genre.name + '"> ' + genre.name + '</option>')
+        tableOfGenreEdit.append(' <option value="' + genre.name + '"> ' + genre.name + '</option>')
+
+
+    }
+
+
+    function getAllBands() {
+        $.ajax({
+            url: mainUrl + "/bands?page=0&size=100&sortFieldName=name&direction=ASC",
+
+            type: "GET",
+            contentType: "application/json",
+            headers: {
+                'Authorize': window.localStorage.getItem('token')
+            },
+            success: function (dataResponse) {
+                console.log(dataResponse)
+                setBandsToTable(dataResponse.data);
+
+            },
+            error: function (error) {
+                alert(error.message);
+            }
+        });
+    }
+
+    function setBandsToTable(bands) {
+        for (var i = 0; i < bands.length; i++) {
+            setBandsToTablea(bands[i]);
+        }
+    }
+
+
+    function setBandsToTablea(bands) {
+        var tableOfGenre = $("#bands");
+        var tableOfBand = $("#bandEdit");
+        tableOfGenre.append(' <option value="' + bands.name + '"> ' + bands.name + '</option>')
+        tableOfBand.append(' <option value="' + bands.name + '"> ' + bands.name + '</option>')
+
+
+    }
+
+
+    function setModalConfiguration() {
+        // Get the modal
+        var modal = document.getElementById('myModal');
+
+        // Get the button that opens the modal
+        var btn = document.getElementById("openModal");
+
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
+
+        // When the user clicks the button, open the modal
+        btn.onclick = function () {
+            modal.style.display = "block";
+        };
+
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function () {
+            modal.style.display = "none";
+        };
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        };
+    }
+
+
+</script>
+</body>
+</html>

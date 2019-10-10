@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Main</title>
+    <link rel="stylesheet" href="css/song.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+</head>
+<body bgcolor="black">
+<!--<h1 id="te" hidden="true">Think about it </h1>-->
+
+
+<!--<input type="text" onkeyup="myFunction()" id="myInput" placeholder="Song name, Band name or Genre name" align="center">-->
+
+<!--<div class="miku">-->
+
+<!--    <img id="mi" src="img/miku.gif">-->
+
+<!--</div>-->
+<!--</div>-->
+<img src="img/highoctane.jpg" id="photo">
+<img src="img/highoctane.jpg" id="photo1">
+<div class="containerw">
+
+    <table id="songs">
+
+
+        <tr>
+            <th>Songs:</th>
+            <!--<th>Band:</th>-->
+            <!--<th>Genre:</th>-->
+        </tr>
+    </table>
+
+
+</div>
+
+<script>
+
+
+    var mainUrl = "http://localhost:8085";
+
+    // if (!window.localStorage.getItem('token')) {
+    //     window.location.href = '/sing';
+    // }
+
+    getAllSongs();
+    // getAllBands();
+    // getAllGenres();
+
+    //start when load page PS reload page for triggered http request
+    function getAllSongs() {
+        $.ajax({
+            url: mainUrl + "/public/mp3?page=0&size=100&sortFieldName=name&direction=ASC",
+            // /person?page=0&size=10&sortFieldName=firstName&direction=ASC
+            type: "GET",
+            contentType: "application/json",
+            // headers: {
+            //     'Authorize': window.localStorage.getItem('token')
+            // },
+            success: function (dataResponse) {
+                console.log(dataResponse)
+                setSongsToTable(dataResponse.data);
+
+                dataResponse.data.forEach((song) => {
+                    console.log(song.urlname)
+                    $.ajax({
+                        url: mainUrl + "/css/" + song.urlname,
+                        type: "GET",
+                        contentType: "application/json",
+                        // headers: {
+                        //     'Authorize': window.localStorage.getItem('token')
+                        // },
+                        success: function (dataResponse) {
+                            // console.log(dataResponse)
+
+                        }
+                    });
+            })
+            },
+            error: function (error) {
+                alert(error.message);
+            }
+        });
+    }
+
+
+    function setSongsToTable(songs) {
+        for (var i = 0; i < songs.length; i++) {
+            setSongsToTablea(songs[i]);
+        }
+    }
+
+
+    function setSongsToTablea(songs) {
+        var tableOfSongs = $("#songs");
+        tableOfSongs.append('<tr id="myUL">' +
+
+            // '<td><a class="href"  href="' + songs.urlname + '">' + songs.name + " " + " " + " " + " " + " -> " + " " + " " + songs.bame + " " + " " + " | " + "{ " + songs.genreName + " }" + '</a></td>' +
+            '<td><audio src="'+"/css/"+songs.urlname +'" controls></audio><a>' + songs.name + "| " + songs.bame + "|" + songs.genreName + '</a></td>' +
+
+
+
+            // '<td>' + songs.bame + '</td>' +
+            // '<td id="genreName">' + songs.genreName + '</td>' +
+
+            '</tr>');
+    }
+
+
+    function myFunction() {
+
+        var input, filter, a, i, tr, td,audio;
+        input = document.getElementById('myInput');
+        filter = input.value.toUpperCase();
+        tr = document.getElementById("songs");
+        td = tr.getElementsByTagName('td');
+        // tr = document.getElementById("songs");
+        // td = tr.getElementsByTagName('td');
+
+
+        for (i = 0; i < td.length; i++) {
+            a = td[i].getElementsByTagName("a")[0];
+            // b = td[i].getElementsByTagName("b")[1];
+            if(td == a){
+                alert("dd")
+            }else {
+                alert("error");
+            }
+
+            if (a.innerHTML.toUpperCase().indexOf(filter) > -1) {
+                td[i].style.display = "";
+            } else {
+                alert("error");
+            }
+
+
+        }
+
+    }
+
+
+
+
+</script>
+
+</body>
+</html>

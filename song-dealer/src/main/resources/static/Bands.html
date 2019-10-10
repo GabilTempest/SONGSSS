@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bands</title>
+    <link rel="stylesheet" href="css/band.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</head>
+<body>
+<!-- Trigger/Open The Modal -->
+<button id="openModal">Create Band</button>
+
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+    <!-- Modal content -->
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="close">&times;</span>
+            <h2>Create Band</h2>
+        </div>
+        <div class="modal-body">
+            <div>
+                <form>
+
+                    <!--                    <label for="url"> Name</label><br>-->
+                    <!--                    <input type="text" id="url" name="url" placeholder="URL.."><br>-->
+                    <!--                    -->
+                    <!--                    -->
+
+
+                    <!--                    <label for="photo"> Name</label><br>-->
+                    <!--                    <input type="text" id="photo" name="photo" placeholder="Photo URL.."><br>-->
+
+
+                    <label for="fname"> Name</label><br>
+                    <input type="text" id="fname" name="name" placeholder="Band name.."><br>
+
+
+                    <!--                    <label for="genreName"> Genre</label><br>-->
+                    <select type="select" id="genre" name="genreName" placeholder="Genre name..">
+                        <option value="name"></option>
+
+                    </select><br>
+                    <!--                    <input type="text" id="genreName" name="gene" placeholder="Genre name.."><br>-->
+
+                    <!--                    <select type="select" id="genreName" name="genreName" placeholder="Genre name..">-->
+                    <!--                        <option id="genre"> </option>-->
+                    <!--                    </select>-->
+
+
+<!--                    <label for="alive"> Status </label><br>-->
+                    <!--<input type="text" id="alive" name="alive" placeholder="Status"><br>-->
+                    <select type="select" id="alive" placeholder="Status">
+                        <option> Alive</option>
+                        <option> Disintegrated</option>
+
+                    </select><br>
+
+                    <input type="button" id="btnCreateBands" value="Create">
+                </form>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <h3>Form for new band</h3>
+        </div>
+    </div>
+
+</div>
+
+
+<div class="container" style="display: none;">
+    <input id="bands-id" style="display: none">
+
+    <!--    <input type="text" id="url-name" placeholder="URL"><br>-->
+
+    <input type="text" id="url-photo" placeholder="Photo URL"><br>
+
+    <input type="text" id="bands-name" placeholder="Name"><br>
+
+    <!--    <select type="select" id="genreName-name" name="genreName" placeholder="Genre name..">-->
+    <select type="select" id="genreEdit" name="genreName" placeholder="Genre name..">
+        <option value="name"></option>
+
+    </select>
+    <!--    </select><br>-->
+
+
+    <select type="select" id="Alive-name" placeholder="Status">
+        <option> Alive</option>
+        <option> Disintegrated</option>
+
+    </select><br>
+
+    <button id="update-button">Update</button>
+</div>
+
+<div class="controllers">
+    <input class="bands-id" type="text">
+    <button id="init-button">Init</button>
+</div>
+
+
+<table id="bands">
+    <tr>
+        <th>Id</th>
+        <!--        <th>Photo</th>-->
+        <th>Bands</th>
+        <!--<th>Album</th>>-->
+        <th>Genre</th>
+
+        <th>Status</th>
+
+        <th>Delete Button</th>
+    </tr>
+</table>
+
+<script>
+    var mainUrl = "http://localhost:8085";
+    getAllBands();
+    setModalConfiguration();
+    setActionOnCreateBtn();
+    // setActionOnUpdateButtons();
+    getAllGenres();
+
+    if (!window.localStorage.getItem('token')) {
+        window.location.href = '/sing';
+    }
+
+    function getAllBands() {
+        $.ajax({
+            url: mainUrl + "/bands?page=0&size=100&sortFieldName=name&direction=ASC",
+
+            type: "GET",
+            contentType: "application/json",
+            headers: {
+                'Authorize': window.localStorage.getItem('token')
+            },
+            success: function (dataResponse) {
+                console.log(dataResponse)
+                setBandsToTable(dataResponse.data);
+                setActionOnDeleteButtons();
+
+            },
+            error: function (error) {
+                alert(error.message);
+            }
+        });
+    }
+
+    function setBandsToTable(bands) {
+        for (var i = 0; i < bands.length; i++) {
+            setBandsToTablea(bands[i]);
+        }
+    }
+
+    function setBandsToTablea(bands) {
+        var tableOfBands = $("#bands");
+        tableOfBands.append('<tr>' +
+            '<td>' + bands.id + '</td>' +
+            // '<td><img class="hj" src= " ' + bands.photo + '"></td>' +
+
+            // '<td><a class="href" href="' + bands.url + '">' + bands.name + '</a></td>' +
+            '<td>' + bands.name + '</a></td>' +
+            // '<td>' + bands.name + '</td>' +
+            '<td>' + bands.genreName + '</td>' +
+            '<td>' + bands.alive + '</td>' +
+
+
+            // '<td><a class="href" href="' + bands.name + '">' + bands.name + '</a></td>' +
+
+            // '<td>' + + '</td>' +
+
+            '<td><button class="button" value="' + bands.id + '">Delete</button></td>' +
+            '</tr>');
+
+    }
+
+
+    function setActionOnDeleteButtons() {
+        $(".button").each(function (index) {
+            $(this).click(function () {
+                $.ajax({
+                    url: mainUrl + "/bands/" + $(this).val(),
+                    type: "DELETE",
+                    headers: {
+                        'Authorize': window.localStorage.getItem('token')
+                    },
+                    success: function (data) {
+                        location.reload();
+                    },
+                    error: function (error) {
+                        alert(error.message);
+                    }
+                });
+            })
+        })
+    }
+
+    function setActionOnCreateBtn() {
+        $("#btnCreateBands").click(function () {
+
+            var name = $("#fname").val();
+            var genreName = $("#genre").val();
+            var alive = $("#alive").val();
+            var url = $("#url").val();
+            // var photo = $("#photo").val();
+
+
+            var newBands = {
+                "name": name,
+                "genreName": genreName,
+                "alive": alive,
+                "url": url,
+                // "photo": photo,
+
+
+            };
+
+
+            $.ajax({
+                url: mainUrl + "/bands",
+                type: "POST",
+                contentType: "application/json",
+                headers: {
+                    'Authorize': window.localStorage.getItem('token')
+                },
+                data: JSON.stringify(newBands),
+                success: function (data) {
+                    location.reload();
+                },
+                error: function (error) {
+                    alert(error.message);
+                }
+            });
+//            } else {
+//                alert("Всі поля повинні бути заповнені")
+//            }
+        });
+
+    };
+
+    $('#update-button').click(function () {
+
+        let bandsRequest = {
+            name: $('#bands-name').val(),
+            genreName: $('#genreEdit').val(),
+            alive: $('#Alive-name').val(),
+            url: $('#url-name').val(),
+            // photo: $('#url-photo').val(),
+            //
+
+        };
+
+        $.ajax({
+            url: 'http://localhost:8085/bands?id=' + $('.bands-id').val(),
+            type: 'PUT',
+            contentType: "application/json",
+            headers: {
+                'Authorize': window.localStorage.getItem('token')
+            },
+            data: JSON.stringify(bandsRequest),
+            success: function (page) {
+                $('.container').slideUp();
+            },
+            error: function (e) {
+                console.log(e);
+            }
+        })
+
+    });
+
+    $('#init-button').click(function () {
+        let $bandsId = $('.bands-id');
+
+        if ($bandsId.val().trim().length < 1) {
+            alert("Enter id");
+            return;
+        }
+
+        $.ajax({
+            url: 'http://localhost:8085/bands/one?id=' + $bandsId.val(),
+            type: 'GET',
+            headers: {
+                'Authorize': window.localStorage.getItem('token')
+            },
+            success: function (bands) {
+                $('#bandsId').val(bands.name);
+                $('#bands-name').val(bands.name);
+                $('#genreEdit').val(bands.genreName);
+                $('#Alive-name').val(bands.alive);
+                $('#url-name').val(bands.url);
+                // $('#url-photo').val(bands.photo);
+
+                $('.container').slideDown();
+            },
+            error: function (e) {
+                $('.container').slideUp();
+                // if ( e.responseJSON.message.contains('not exists')) {
+                //     alert(message);
+                // }
+                alert("НЕМАЄ ТАКОГО ID");
+                console.log(e)
+
+            }
+
+        })
+
+
+    });
+
+    function getAllGenres() {
+        $.ajax({
+            url: mainUrl + "/genre?page=0&size=10&sortFieldName=name&direction=ASC",
+
+            type: "GET",
+            contentType: "application/json",
+            headers: {
+                'Authorize': window.localStorage.getItem('token')
+            },
+
+            success: function (dataResponse) {
+                console.log(dataResponse)
+                setGenrestoTable(dataResponse.data);
+                setActionOnDeleteButtons();
+
+            },
+            error: function (error) {
+                alert(error.message);
+            }
+        });
+    }
+
+
+    function setGenrestoTable(genre) {
+        for (var i = 0; i < genre.length; i++) {
+            setGenrestoTablea(genre[i]);
+        }
+    }
+
+
+    function setGenrestoTablea(genre) {
+        var tableOfGenre = $("#genre");
+        var tableOfGenreEdit = $("#genreEdit");
+        tableOfGenre.append(' <option value="' + genre.name + '"> ' + genre.name + '</option>')
+        tableOfGenreEdit.append(' <option value="' + genre.name + '"> ' + genre.name + '</option>')
+
+
+    }
+
+    function setModalConfiguration() {
+        // Get the modal
+        var modal = document.getElementById('myModal');
+
+        // Get the button that opens the modal
+        var btn = document.getElementById("openModal");
+
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
+
+        // When the user clicks the button, open the modal
+        btn.onclick = function () {
+            modal.style.display = "block";
+        };
+
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function () {
+            modal.style.display = "none";
+        };
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        };
+    }
+
+
+</script>
+</body>
+</html>

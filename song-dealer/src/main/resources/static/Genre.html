@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta charset="UTF-8">
+    <title>Main</title>
+    <link rel="stylesheet" href="css/genre.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+</head>
+<body>
+<!-- Trigger/Open The Modal -->
+<button id="openModal">Create Genre</button>
+
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+    <!-- Modal content -->
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="close">&times;</span>
+            <h2>Create genre</h2>
+        </div>
+        <div class="modal-body">
+            <div>
+                <form>
+                    <label for="fname">Name</label><br>
+                    <input type="text" id="fname" name="name" placeholder="Song name.."><br>
+
+
+                    <input type="button" id="btnCreateGenre" value="Create">
+                </form>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <h3>Form for new genre</h3>
+        </div>
+    </div>
+
+</div>
+<div class="container" style="display: none;">
+    <input id="genre-id" style="display: none">
+    <input type="text" id="genre-name" placeholder="Name"><br>
+
+
+    <button id="update-button">Update</button>
+</div>
+
+<div class="controllers">
+    <input class="genre-id" type="text">
+    <button id="init-button">Init</button>
+</div>
+
+
+<table id="genre">
+    <tr>
+        <th>Id</th>
+        <th>Name</th>
+
+
+        <th>Delete Button</th>
+    </tr>
+</table>
+
+<script>
+    var mainUrl = "http://localhost:8085";
+
+    getAllGenres();
+
+    setModalConfiguration();
+    setActionOnCreateBtn();
+
+
+    if (!window.localStorage.getItem('token')) {
+        window.location.href = '/sing';
+    }
+
+    //start when load page PS reload page for triggered http request
+    function getAllGenres() {
+        $.ajax({
+            url: mainUrl + "/genre?page=0&size=10&sortFieldName=name&direction=ASC",
+
+            type: "GET",
+            contentType: "application/json",
+            headers: {
+                'Authorize': window.localStorage.getItem('token')
+            },
+
+            success: function (dataResponse) {
+                console.log(dataResponse)
+                setGenrestoTable(dataResponse.data);
+                setActionOnDeleteButtons();
+
+            },
+            error: function (error) {
+                alert(error.message);
+            }
+        });
+    }
+
+
+    function setGenrestoTable(genre) {
+        for (var i = 0; i < genre.length; i++) {
+            setGenrestoTablea(genre[i]);
+        }
+    }
+
+
+    function setGenrestoTablea(genre) {
+        var tableOfGenre = $("#genre");
+        tableOfGenre.append('<tr>' +
+            '<td>' + genre.id + '</td>' +
+
+            '<td >'+ genre.name +'</td>' +
+
+
+            '<td><button class="button" value="' + genre.id + '">Delete</button></td>' +
+            '</tr>');
+
+
+    }
+
+
+    //delete process
+    function setActionOnDeleteButtons() {
+        $(".button").each(function (index) {
+            $(this).click(function () {
+                $.ajax({
+                    url: mainUrl + "/genre/" + $(this).val(),
+                    type: "DELETE",
+                    headers: {
+                        'Authorize': window.localStorage.getItem('token')
+                    },
+                    success: function (data) {
+                        location.reload();
+                    },
+                    error: function (error) {
+                        alert(error.message);
+                    }
+                });
+            })
+        })
+
+    }
+
+    function setActionOnCreateBtn() {
+        $("#btnCreateGenre").click(function () {
+            var name = $("#fname").val();
+            var url = $("#url").val();
+
+            var newGenre = {
+                "name": name,
+                "url": url,
+            };
+
+            $.ajax({
+                url: mainUrl + "/genre",
+                type: "POST",
+                contentType: "application/json",
+                headers: {
+                    'Authorize': window.localStorage.getItem('token')
+                },
+                data: JSON.stringify(newGenre),
+                success: function (data) {
+                    location.reload();
+                },
+                error: function (error) {
+                    alert(error.message);
+                }
+            });
+//            } else {
+//                alert("Всі поля повинні бути заповнені")
+//            }
+        });
+    }
+
+
+    $('#update-button').click(function () {
+
+        let genreRequest = {
+            name: $('#genre-name').val(),
+            url: $('#url-name').val(),
+            // songsId: 49
+        };
+
+        $.ajax({
+            url: 'http://localhost:8085/genre?id=' + $('.genre-id').val(),
+            type: 'PUT',
+            contentType: "application/json",
+            headers: {
+                'Authorize': window.localStorage.getItem('token')
+            },
+            data: JSON.stringify(genreRequest),
+            success: function (page) {
+                $('.container').slideUp();
+            },
+            error: function (e) {
+                console.log(e);
+            }
+        })
+
+    });
+
+    $('#init-button').click(function () {
+        let $genreId = $('.genre-id');
+
+        if ($genreId.val().trim().length < 1) {
+            alert("Enter id");
+            return;
+        }
+
+        $.ajax({
+            url: 'http://localhost:8085/genre/one?id=' + $genreId.val(),
+            type: 'GET',
+            headers: {
+                'Authorize': window.localStorage.getItem('token')
+            },
+            success: function (genre) {
+                $('#genre-id').val(genre.name);
+                $('#genre-name').val(genre.name);
+                // $('#url-name').val(genre.name);
+
+                $('.container').slideDown();
+            },
+            error: function (e) {
+                $('.container').slideUp();
+                // if ( e.responseJSON.message.contains('not exists')) {
+                //     alert(message);
+                // }
+                alert("НЕМАЄ ТАКОГО ID");
+                console.log(e)
+
+            }
+
+        })
+
+
+    });
+
+
+    //
+    // function setActionOnUpdateButtons() {
+    //     $(".update-button").click(function () {
+    //         setModalConfigurationForUpdate();
+    //         var id_value = $(this).val();
+    //
+    //         $.ajax({
+    //             url: mainUrl + "/genre/getOneById?id=" + id_value,
+    //             type: 'GET',
+    //             success: function (gener) {
+    //                 $('#update-sname').val(gener.name);
+    //             }
+    //         });
+    //
+    //         $("#update").click(function () {
+    //
+    //             var name = $("#update-sname").val();
+    //
+    //
+    //             var updateEntity = {
+    //                 "name": name
+    //             };
+    //
+    //             $.ajax({
+    //                 url: mainUrl + "/genre?id=" + id_value,
+    //                 type: "PUT",
+    //                 contentType: "application/json",
+    //                 headers: {
+    //                     'Authorize': window.localStorage.getItem('token')
+    //                 },
+    //                 data: JSON.stringify(updateEntity),
+    //                 success: function (data) {
+    //                     console.log("success")
+    //                     location.reload();
+    //                 },
+    //                 error: function (error) {
+    //                     console.log(error)
+    //                     alert(error.message);
+    //                 }
+    //             });
+    //         })
+    //
+    //
+    //     })
+    //
+    // }
+
+    // function getBase64(file) {
+    //     return new Promise((resolve, reject) => {
+    //         const reader = new FileReader();
+    //     reader.readAsDataURL(file);
+    //     reader.onload = () => resolve(reader.result);
+    //     reader.onerror = error => reject(error);
+    // });
+    // }
+    //
+    // function setActionOnUpdateButtons() {
+    //     $(".update-button").click(function () {
+    //
+    //         // initCategoriesForUpdate();
+    //         var id_value = $(this).val();
+    //
+    //         $.ajax({
+    //             url: mainUrl + "/country/getOneById?id=" + id_value,
+    //             type: 'GET',
+    //             success: function (country) {
+    //
+    //                 // document.getElementById('update-image').setAttribute('src','/img/' + songs.picture);
+    //
+    //                 $('#update-fname').val(country.name);
+    //
+    //             }
+    //         });
+    //
+    //         $("#update").click(function () {
+    //             var file = document.getElementById("update-getFile").files[0];
+    //             getBase64(file).then(data => {
+    //
+    //                 //work with data as src of file
+    //                 let request = {
+    //                     fileName: "someCustomFileName",
+    //                     data: data
+    //                 }
+    //                 $.ajax({
+    //                     url: mainUrl + "/upload",
+    //                     type: "POST",
+    //                     contentType: "application/json",
+    //                     data: JSON.stringify(request),
+    //                     success: function (data) {
+    //                         var name = $("#update-fname").val();
+    //
+    //
+    //                         var updateEntity = {
+    //                             "name": name,
+    //
+    //                         };
+    //
+    //                         $.ajax({
+    //                             url: mainUrl + "/country?id=" + id_value,
+    //                             type: "PUT",
+    //                             contentType: "application/json",
+    //                             data: JSON.stringify(updateEntity),
+    //                             success: function (data) {
+    //                                 location.reload();
+    //                             },
+    //                             error: function (error) {
+    //                                 console.log(error)
+    //                                 alert(error.message);
+    //                             }
+    //                         });
+    //
+    //                     },
+    //                     error: function (error) {
+    //                         alert(error.message);
+    //                     }
+    //                 });
+    //         });
+    //
+    //         })
+    //
+    //
+    //     })
+    //
+    // }
+    //
+    // function setModalConfigurationForUpdate() {
+    //     // Get the modal
+    //     var modal = document.getElementById('myModalForUpdate');
+    //
+    //     // Get the button that opens the modal
+    //     var btn = $('.update-button');
+    //
+    //
+    //     // Get the <span> element that closes the modal
+    //     var span = document.getElementsByClassName("close-update")[0];
+    //
+    //     // When the user clicks the button, open the modal
+    //     btn.click(function () {
+    //         modal.style.display = "block";
+    //     });
+    //
+    //     // When the user clicks on <span> (x), close the modal
+    //     span.onclick = function () {
+    //         modal.style.display = "none";
+    //     };
+    //
+    //     // When the user clicks anywhere outside of the modal, close it
+    //     window.onclick = function (event) {
+    //         if (event.target == modal) {
+    //             modal.style.display = "none";
+    //         }
+    //     };
+    // }
+    //
+    //
+
+
+    function setModalConfiguration() {
+        // Get the modal
+        var modal = document.getElementById('myModal');
+
+        // Get the button that opens the modal
+        var btn = document.getElementById("openModal");
+
+        // Get the <span> element that closes the modal
+        var span = document.getElementsByClassName("close")[0];
+
+        // When the user clicks the button, open the modal
+        btn.onclick = function () {
+            modal.style.display = "block";
+        };
+
+        // When the user clicks on <span> (x), close the modal
+        span.onclick = function () {
+            modal.style.display = "none";
+        };
+
+        // When the user clicks anywhere outside of the modal, close it
+        window.onclick = function (event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        };
+    }
+
+
+</script>
+
+</body>
+</html>
